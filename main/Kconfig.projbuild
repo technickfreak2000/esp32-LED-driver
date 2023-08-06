@@ -1,0 +1,46 @@
+menu "Wifi Configuration"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+    config ESP_WIFI_CHANNEL
+        int "WiFi Channel"
+        range 1 13
+        default 1
+        help
+            WiFi channel (network channel) for the example to use.
+
+    config ESP_MAX_STA_CONN
+        int "Maximal STA connections"
+        default 4
+        help
+            Max number of the STA connects to AP.
+endmenu
+
+menu "LED driver Configuration"
+
+    config ESP_LED_PIN
+        int "LED PIN"
+        range 0 39
+        default 4
+        help
+            Defines which pin to use for led
+    config LED_NUMBERS
+        int "Numbers of LEDs"
+        default 8
+        help
+            Define how many LEDs your strip has
+    config RMT_LED_STRIP_RESOLUTION_HZ
+        int "RMT led strip resolution"
+        default 10000000
+        help
+            10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
+endmenu
