@@ -9,10 +9,10 @@
 
 static const char *TAG = "rmt led strip";
 
-static uint8_t* led_strip_pixels = NULL;
+uint8_t* led_strip_pixels = NULL;
+bool update_needed = false;
 
 TaskHandle_t ledTaskHandle = NULL;
-
 
 
 /**
@@ -96,30 +96,12 @@ void task_led_strip(void *arg)
         .loop_count = 0, // no transfer loop
     };
 
-    uint8_t* last_led_strip_pixels = NULL;
-
     while (1) {
-        bool update_needed = false;
-
-        if (last_led_strip_pixels == NULL || sizeof(led_strip_pixels) != sizeof(last_led_strip_pixels)) {
-            // Allocate memory only when needed or when sizes differ
-            free(last_led_strip_pixels);
-            last_led_strip_pixels = (uint8_t*)malloc(sizeof(led_strip_pixels));
-            if (last_led_strip_pixels == NULL) {
-                ESP_LOGE(TAG, "Memory allocation failed for last_led_strip_pixels.");
-                vTaskDelete(NULL);
-                return;
-            }
+        if (led_strip_pixels != NULL && update_needed) {
+            ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, (sizeof(led_strip_pixels)*3), &tx_config));
+            update_needed = false;
         }
-
-        if (memcmp(led_strip_pixels, last_led_strip_pixels, sizeof(led_strip_pixels)) != 0) {
-            update_needed = true;
-            memcpy(last_led_strip_pixels, led_strip_pixels, sizeof(led_strip_pixels));
-        }
-
-        if (update_needed) {
-            ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));
-        }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 

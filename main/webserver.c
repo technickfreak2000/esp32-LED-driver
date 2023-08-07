@@ -28,7 +28,7 @@ typedef struct rest_server_context
 extern const char root_start[] asm("_binary_root_html_start");
 extern const char root_end[] asm("_binary_root_html_end");
 
-//################################################################### Handler ###################################################################
+// ################################################################### Handler ###################################################################
 
 // Root website Handler
 static esp_err_t root_get_handler(httpd_req_t *req)
@@ -80,22 +80,26 @@ static esp_err_t api_post_handler(httpd_req_t *req)
 
     free(led_strip_pixels);
 
-    led_strip_pixels = (uint8_t*)malloc(num_elements * 3);
+    led_strip_pixels = (uint8_t *)malloc(num_elements * 3);
 
-    if (led_strip_pixels == NULL) {
+    if (led_strip_pixels == NULL)
+    {
         ESP_LOGE(TAG, "Memory allocation failed for led_strip_pixels.");
         cJSON_Delete(root);
     }
 
-    for (int i = 0; i < num_elements; i++) {
-        cJSON* element = cJSON_GetArrayItem(root, i);
-        if (element && cJSON_IsObject(element)) {
-            cJSON* id_obj = cJSON_GetObjectItem(element, "id");
-            cJSON* r_obj = cJSON_GetObjectItem(element, "r");
-            cJSON* g_obj = cJSON_GetObjectItem(element, "g");
-            cJSON* b_obj = cJSON_GetObjectItem(element, "b");
+    for (int i = 0; i < num_elements; i++)
+    {
+        cJSON *element = cJSON_GetArrayItem(root, i);
+        if (element && cJSON_IsObject(element))
+        {
+            cJSON *id_obj = cJSON_GetObjectItem(element, "id");
+            cJSON *r_obj = cJSON_GetObjectItem(element, "r");
+            cJSON *g_obj = cJSON_GetObjectItem(element, "g");
+            cJSON *b_obj = cJSON_GetObjectItem(element, "b");
 
-            if (id_obj && r_obj && g_obj && b_obj) {
+            if (id_obj && r_obj && g_obj && b_obj)
+            {
                 int id = id_obj->valueint;
                 int r = r_obj->valueint;
                 int g = g_obj->valueint;
@@ -106,9 +110,12 @@ static esp_err_t api_post_handler(httpd_req_t *req)
                 led_strip_pixels[id * 3 + 2] = b; // blue
 
                 ESP_LOGI(TAG, "Values: id: %i, r: %i, g: %i, b: %i", id, r, g, b);
+                
             }
         }
     }
+
+    update_needed = true;
 
     httpd_resp_sendstr(req, "Post control value successfully");
 
@@ -131,7 +138,7 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
     return ESP_OK;
 }
 
-//################################################################### Sites ###################################################################
+// ################################################################### Sites ###################################################################
 
 static const httpd_uri_t root = {
     .uri = "/",
@@ -143,8 +150,7 @@ static const httpd_uri_t api = {
     .method = HTTP_POST,
     .handler = api_post_handler};
 
-
-//################################################################### Webserver ###################################################################
+// ################################################################### Webserver ###################################################################
 
 httpd_handle_t start_webserver(void)
 {

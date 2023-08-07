@@ -3,6 +3,7 @@
 
 void init_led_strip(void);
 
-static uint8_t* led_strip_pixels = NULL;
+extern uint8_t* led_strip_pixels;
+extern bool update_needed;
 
 #endif
