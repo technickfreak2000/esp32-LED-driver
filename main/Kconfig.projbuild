@@ -33,11 +33,6 @@ menu "LED driver Configuration"
         default 4
         help
             Defines which pin to use for led
-    config LED_NUMBERS
-        int "Numbers of LEDs"
-        default 8
-        help
-            Define how many LEDs your strip has
     config RMT_LED_STRIP_RESOLUTION_HZ
         int "RMT led strip resolution"
         default 10000000
