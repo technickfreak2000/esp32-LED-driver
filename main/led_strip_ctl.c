@@ -13,6 +13,8 @@ static uint8_t led_strip_pixels[CONFIG_LED_NUMBERS * 3];
 
 TaskHandle_t ledTaskHandle = NULL;
 
+
+
 /**
  * @brief Simple helper function, converting HSV color space to RGB color space
  *
@@ -73,6 +75,7 @@ void task_led_strip(void *arg)
     uint32_t blue = 0;
     uint16_t hue = 0;
     uint16_t start_rgb = 0;
+    uint32_t j = 0;
 
     ESP_LOGI(TAG, "Create RMT TX channel");
     rmt_channel_handle_t led_chan = NULL;
@@ -100,18 +103,45 @@ void task_led_strip(void *arg)
         .loop_count = 0, // no transfer loop
     };
 
-    while (1)
+    /*while (1)
     {
         for (int i = 0; i < 3; i++)
         {
             for (int j = i; j < CONFIG_LED_NUMBERS; j += 3)
             {
-                // Build RGB pixels
-                hue = j * 360 / CONFIG_LED_NUMBERS + start_rgb;
-                led_strip_hsv2rgb(hue, 100, 100, &red, &green, &blue);
-                led_strip_pixels[j * 3 + 0] = green;
-                led_strip_pixels[j * 3 + 1] = blue;
-                led_strip_pixels[j * 3 + 2] = red;
+                red = 0;
+                green = 0;
+                blue = 0;
+                led_strip_pixels[j * 3 + 0] = green; // green
+                led_strip_pixels[j * 3 + 1] = blue;  // blue
+                led_strip_pixels[j * 3 + 2] = red;   // red
+                if (j == 0)
+                {
+                    red = 255;
+                    green = 0;
+                    blue = 0;
+                    led_strip_pixels[j * 3 + 0] = green; // green
+                    led_strip_pixels[j * 3 + 1] = blue;  // blue
+                    led_strip_pixels[j * 3 + 2] = red;   // red
+                }
+                if (j == 3)
+                {
+                    red = 0;
+                    green = 255;
+                    blue = 0;
+                    led_strip_pixels[j * 3 + 0] = green; // green
+                    led_strip_pixels[j * 3 + 1] = blue;  // blue
+                    led_strip_pixels[j * 3 + 2] = red;   // red
+                }
+                if (j == 3)
+                {
+                    red = 0;
+                    green = 0;
+                    blue = 255;
+                    led_strip_pixels[j * 3 + 0] = green; // green
+                    led_strip_pixels[j * 3 + 1] = blue;  // blue
+                    led_strip_pixels[j * 3 + 2] = red;   // red
+                }
             }
             // Flush RGB values to LEDs
             ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));
@@ -121,7 +151,37 @@ void task_led_strip(void *arg)
             vTaskDelay(pdMS_TO_TICKS(EXAMPLE_CHASE_SPEED_MS));
         }
         start_rgb += 60;
-    }
+    }*/
+
+    j = 0;
+    red = 0;
+    green = 0;
+    blue = 50;
+    led_strip_pixels[j * 3 + 0] = green; // green
+    led_strip_pixels[j * 3 + 1] = red;  // red
+    led_strip_pixels[j * 3 + 2] = blue;   // blue
+
+    j = 1;
+    red = 0;
+    green = 50;
+    blue = 0;
+    led_strip_pixels[j * 3 + 0] = green; // green
+    led_strip_pixels[j * 3 + 1] = red;  // red
+    led_strip_pixels[j * 3 + 2] = blue;   // blue
+
+    j = 2;
+    red = 50;
+    green = 0;
+    blue = 0;
+    led_strip_pixels[j * 3 + 0] = green; // green
+    led_strip_pixels[j * 3 + 1] = red;  // red
+    led_strip_pixels[j * 3 + 2] = blue;   // blue
+
+    // Flush RGB values to LEDs
+    ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, sizeof(led_strip_pixels), &tx_config));
+    vTaskDelay(pdMS_TO_TICKS(EXAMPLE_CHASE_SPEED_MS));
+
+    vTaskDelete(NULL);
 }
 
 void init_led_strip(void)

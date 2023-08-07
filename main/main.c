@@ -18,8 +18,11 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+#include "esp_http_server.h"
+
 #include "wifi.h"
 #include "led_strip_ctl.h"
+#include "webserver.h"
 
 static const char *TAG = "main";
 
@@ -37,7 +40,8 @@ void app_main(void)
   ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
   wifi_init_softap();
 
-  
+  ESP_LOGI(TAG, "starting webserver");
+  start_webserver();
 
   ESP_LOGI(TAG, "init LED strip");
   init_led_strip();

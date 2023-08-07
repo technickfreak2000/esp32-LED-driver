@@ -3,4 +3,6 @@ idf_component_register(SRCS
                     "wifi.c"
                     "led_strip_encoder.c"
                     "led_strip_ctl.c"
-                    INCLUDE_DIRS ".")
+                    "webserver.c"
+                    INCLUDE_DIRS "."
+                    EMBED_FILES root.html)
