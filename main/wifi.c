@@ -52,6 +52,7 @@ void wifi_init_softap(void)
             .pmf_cfg = {
                     .required = false,
             },
+            .beacon_interval = 33,
         },
     };
     if (strlen(CONFIG_ESP_WIFI_PASSWORD) == 0) {

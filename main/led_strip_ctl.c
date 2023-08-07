@@ -89,7 +89,7 @@ void task_led_strip(void *arg)
     ESP_LOGI(TAG, "Enable RMT TX channel");
     ESP_ERROR_CHECK(rmt_enable(led_chan));
 
-    ESP_LOGI(TAG, "Start LED rainbow chase");
+    ESP_LOGI(TAG, "Start LED task");
     rmt_transmit_config_t tx_config = {
         .loop_count = 0, // no transfer loop
     };
