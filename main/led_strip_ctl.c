@@ -5,8 +5,6 @@
 #include "driver/rmt_tx.h"
 #include "led_strip_encoder.h"
 
-#define EXAMPLE_CHASE_SPEED_MS 10
-
 static const char *TAG = "rmt led strip";
 
 uint8_t* led_strip_pixels = NULL;
