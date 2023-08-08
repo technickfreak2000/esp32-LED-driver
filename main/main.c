@@ -23,6 +23,7 @@
 #include "wifi.h"
 #include "led_strip_ctl.h"
 #include "webserver.h"
+#include "mount.h"
 
 static const char *TAG = "main";
 
@@ -40,8 +41,13 @@ void app_main(void)
   ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
   wifi_init_softap();
 
+  /* Initialize file storage */
+  ESP_LOGI(TAG, "init storage");
+  const char* base_path = "/data";
+  ESP_ERROR_CHECK(mount_spiffs(base_path));
+
   ESP_LOGI(TAG, "starting webserver");
-  start_webserver();
+  start_webserver(base_path);
 
   ESP_LOGI(TAG, "init LED strip");
   init_led_strip();

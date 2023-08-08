@@ -1,68 +1,69 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="utf-8" />
-    <title>ESP JSON LED CTL</title>
-</head>
-
-<body>
-
-    <h1>ESP JSON LED CTL</h1>
-    <br>
-    <button onclick="send_test()">Send test</button>
-</body>
-
-</html>
-
+<table class="fixed" border="0">
+    <col width="1000px" /><col width="500px" />
+    <tr><td>
+        <h2>ESP32 LED Driver</h2>
+    </td><td>
+        <table border="0">
+            <tr>
+                <td>
+                    <label for="newfile">Upload a file</label>
+                </td>
+                <td colspan="2">
+                    <input id="newfile" type="file" style="width:100%;">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button id="upload" type="button" onclick="upload_check()">Upload</button>
+                </td>
+            </tr>
+        </table>
+    </td></tr>
+</table>
 <script>
-    function send_test() {
-        const ledStripData = [
-            {
-                "id": 0,
-                "r": 255,
-                "g": 0,
-                "b": 0
-            },
-            {
-                "id": 1,
-                "r": 0,
-                "g": 255,
-                "b": 0
-            },
-            {
-                "id": 2,
-                "r": 0,
-                "g": 0,
-                "b": 255
-            },
-            {
-                "id": 3,
-                "r": 255,
-                "g": 255,
-                "b": 255
-            }
-        ];
+function upload_check() {
+    var filePath = "data.json";
+    var upload_path = "/upload/" + filePath;
+    var fileInput = document.getElementById("newfile").files;
 
-        const options = {
-            method: 'POST',
-            body: JSON.stringify(ledStripData),
-            headers: {
-                'Content-Type': 'application/json'
+    /* Max size of an individual file. Make sure this
+     * value is same as that set in file_server.c */
+    var MAX_FILE_SIZE = 200*1024;
+    var MAX_FILE_SIZE_STR = "200KB";
+
+    if (fileInput.length == 0) {
+        alert("No file selected!");
+    } else if (filePath.length == 0) {
+        alert("File path on server is not set!");
+    } else if (filePath.indexOf(' ') >= 0) {
+        alert("File path on server cannot have spaces!");
+    } else if (filePath[filePath.length-1] == '/') {
+        alert("File name not specified after path!");
+    } else if (fileInput[0].size > 200*1024) {
+        alert("File size must be less than 200KB!");
+    } else {
+        document.getElementById("newfile").disabled = true;
+        document.getElementById("upload").disabled = true;
+
+        var file = fileInput[0];
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (xhttp.readyState == 4) {
+                if (xhttp.status == 200) {
+                    document.open();
+                    document.write(xhttp.responseText);
+                    document.close();
+                } else if (xhttp.status == 0) {
+                    alert("Server closed the connection abruptly!");
+                    location.reload()
+                } else {
+                    alert(xhttp.status + " Error!\n" + xhttp.responseText);
+                    location.reload()
+                }
             }
         };
-
-        console.debug("Save pressed");
-        
-        fetch('/api', options)
-            .then(response => response.json())
-            .then(data => {
-                console.log(data); // Assuming the server sends back a JSON response
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-
-        window.close();
+        xhttp.open("POST", upload_path, true);
+        xhttp.send(file);
     }
+}
 </script>
