@@ -9,15 +9,15 @@
 #include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
 
-static const char *TAG = "example_mount";
+static const char *TAG = "mount";
 
 /* Function to initialize SPIFFS */
-esp_err_t mount_spiffs(const char* base_path)
+esp_err_t mount_spiffs()
 {
     ESP_LOGI(TAG, "Initializing SPIFFS");
 
     esp_vfs_spiffs_conf_t conf = {
-        .base_path = base_path,
+        .base_path = CONFIG_SPIFFS_BASE_PATH,
         .partition_label = NULL,
         .max_files = 5,   // This sets the maximum number of files that can be open at the same time
         .format_if_mount_failed = true

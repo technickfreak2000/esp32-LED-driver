@@ -352,6 +352,19 @@ CONFIG_RMT_LED_STRIP_RESOLUTION_HZ=10000000
 # end of LED driver Configuration
 
 #
+# SPIFFS Configuration
+#
+CONFIG_SPIFFS_BASE_PATH="/data"
+# end of SPIFFS Configuration
+
+#
+# Webserver Configuration
+#
+CONFIG_SCRATCH_BUFSIZE=10240
+CONFIG_MAX_FILE_SIZE=204800
+# end of Webserver Configuration
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y

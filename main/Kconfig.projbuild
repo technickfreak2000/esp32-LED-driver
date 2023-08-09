@@ -39,3 +39,25 @@ menu "LED driver Configuration"
         help
             10MHz resolution, 1 tick = 0.1us (led strip needs a high resolution)
 endmenu
+
+menu "SPIFFS Configuration"
+
+    config SPIFFS_BASE_PATH
+        string  "DO NOT CHANGE NOT FULLY IMPLEMENTED!!! Base Path"
+        default "/data"
+        help
+            Defines the base path
+endmenu
+
+menu "Webserver Configuration"
+
+    config SCRATCH_BUFSIZE
+        int  "Max Filesize"
+        default 10240
+
+    config MAX_FILE_SIZE
+        int  "Max Filesize"
+        default 204800
+        help
+            200*1024 = 200KB; Max size of an individual file in KB. Make sure this value is same as that set in upload_script.html
+endmenu

@@ -43,11 +43,10 @@ void app_main(void)
 
   /* Initialize file storage */
   ESP_LOGI(TAG, "init storage");
-  const char* base_path = "/data";
-  ESP_ERROR_CHECK(mount_spiffs(base_path));
+  ESP_ERROR_CHECK(mount_spiffs());
 
   ESP_LOGI(TAG, "starting webserver");
-  start_webserver(base_path);
+  start_webserver();
 
   ESP_LOGI(TAG, "init LED strip");
   init_led_strip();

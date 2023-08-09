@@ -10,7 +10,6 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_tls.h"
-#include "cJSON.h"
 #include "esp_vfs.h"
 
 #include "esp_spiffs.h"
@@ -19,54 +18,17 @@
 
 static const char *TAG = "webserver";
 
-#define SCRATCH_BUFSIZE (10240)
-
 /* Max length a file path can have on storage */
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN)
-
-/* Max size of an individual file. Make sure this
- * value is same as that set in upload_script.html */
-#define MAX_FILE_SIZE   (200*1024) // 200 KB
-#define MAX_FILE_SIZE_STR "200KB"
 
 typedef struct rest_server_context
 {
     char base_path[ESP_VFS_PATH_MAX + 1];
-    char scratch[SCRATCH_BUFSIZE];
+    char scratch[CONFIG_SCRATCH_BUFSIZE];
 } rest_server_context_t;
 
 extern const char root_start[] asm("_binary_root_html_start");
 extern const char root_end[] asm("_binary_root_html_end");
-
-/* Copies the full path into destination buffer and returns
- * pointer to path (skipping the preceding base path) */
-static const char* get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize)
-{
-    const size_t base_pathlen = strlen(base_path);
-    size_t pathlen = strlen(uri);
-
-    const char *quest = strchr(uri, '?');
-    if (quest) {
-        pathlen = MIN(pathlen, quest - uri);
-    }
-    const char *hash = strchr(uri, '#');
-    if (hash) {
-        pathlen = MIN(pathlen, hash - uri);
-    }
-
-    if (base_pathlen + pathlen + 1 > destsize) {
-        /* Full path string won't fit into destination buffer */
-        return NULL;
-    }
-
-    /* Construct full path (base + path) */
-    strcpy(dest, base_path);
-    strlcpy(dest + base_pathlen, uri, pathlen + 1);
-
-    /* Return pointer to path, skipping the base */
-    return dest + base_pathlen;
-}
-
 
 // ################################################################### Handler ###################################################################
 
@@ -81,7 +43,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 
     return ESP_OK;
 }
-
+/*
 // API Post handler
 static esp_err_t api_post_handler(httpd_req_t *req)
 {
@@ -90,10 +52,10 @@ static esp_err_t api_post_handler(httpd_req_t *req)
     int cur_len = 0;
     char *buf = malloc(sizeof(char) * total_len); //((rest_server_context_t *)(req->user_ctx))->scratch;
     int received = 0;
-    if (total_len >= SCRATCH_BUFSIZE)
+    if (total_len >= CONFIG_SCRATCH_BUFSIZE)
     {
-        /* Respond with 500 Internal Server Error */
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
+         Respond with 500 Internal Server Error */
+ /*       httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
         return ESP_FAIL;
     }
     while (cur_len < total_len)
@@ -102,8 +64,8 @@ static esp_err_t api_post_handler(httpd_req_t *req)
         received = httpd_req_recv(req, buf + cur_len, total_len - cur_len);
         if (received <= 0)
         {
-            /* Respond with 500 Internal Server Error */
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
+             Respond with 500 Internal Server Error */
+    /*        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
             return ESP_FAIL;
         }
         cur_len += received;
@@ -162,16 +124,16 @@ static esp_err_t api_post_handler(httpd_req_t *req)
     cJSON_Delete(root);
 
     return ESP_OK;
-}
+}*/
 
 /* Handler to upload a file onto the server */
 static esp_err_t upload_post_handler(httpd_req_t *req)
 {
+    vTaskDelete(ledTaskHandle);
+
     char filepath[FILE_PATH_MAX] = "/data/data.json";
     FILE *fd = NULL;
     struct stat file_stat;
-
-    const char *filename = "/data.json";
 
     if (stat(filepath, &file_stat) == 0) {
         ESP_LOGW(TAG, "File already exists, Overwriting");
@@ -179,12 +141,13 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
     }
 
     /* File cannot be larger than a limit */
-    if (req->content_len > MAX_FILE_SIZE) {
+    if (req->content_len > CONFIG_MAX_FILE_SIZE) {
         ESP_LOGE(TAG, "File too large : %d bytes", req->content_len);
         /* Respond with 400 Bad Request */
-        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST,
-                            "File size must be less than "
-                            MAX_FILE_SIZE_STR "!");
+        char error_message[100];
+        uint32_t max_size_readable = CONFIG_MAX_FILE_SIZE / 1024;
+        sprintf(error_message, "File size must be less than %ldKB!", max_size_readable);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, error_message);
         /* Return failure to close underlying connection else the
          * incoming file content will keep the socket busy */
         return ESP_FAIL;
@@ -212,7 +175,7 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
 
         ESP_LOGI(TAG, "Remaining size : %d", remaining);
         /* Receive the file part by part into a buffer */
-        if ((received = httpd_req_recv(req, buf, MIN(remaining, SCRATCH_BUFSIZE))) <= 0) {
+        if ((received = httpd_req_recv(req, buf, MIN(remaining, CONFIG_SCRATCH_BUFSIZE))) <= 0) {
             if (received == HTTPD_SOCK_ERR_TIMEOUT) {
                 /* Retry if timeout occurred */
                 continue;
@@ -258,6 +221,7 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Connection", "close");
 #endif
     httpd_resp_sendstr(req, "File uploaded successfully");
+    init_led_strip();
     return ESP_OK;
 }
 
@@ -277,8 +241,9 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
 
 // ################################################################### Webserver ###################################################################
 
-httpd_handle_t start_webserver(const char* base_path)
+httpd_handle_t start_webserver()
 {
+    const char* base_path = CONFIG_SPIFFS_BASE_PATH;
     static rest_server_context_t *server_data = NULL;
 
     if (server_data) {

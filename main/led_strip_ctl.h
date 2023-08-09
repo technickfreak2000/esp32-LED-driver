@@ -3,7 +3,6 @@
 
 void init_led_strip(void);
 
-extern uint8_t* led_strip_pixels;
-extern bool update_needed;
+extern TaskHandle_t ledTaskHandle;
 
 #endif
