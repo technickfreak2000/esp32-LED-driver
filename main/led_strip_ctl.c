@@ -10,9 +10,33 @@
 static const char *TAG = "rmt led strip";
 
 uint8_t* led_strip_pixels_frame = NULL;
+char* received_buffer = NULL;
+char* received_buffer_helper = NULL;
 
 TaskHandle_t ledTaskHandle = NULL;
 
+
+void detect_leds(size_t *led_count, char *received_buffer)
+{
+    // go through received buffer and count characters until NULL or \0
+    // divide counted characters two times by 3 
+    // malloc led_strip_pixels_frame
+}
+
+void push_frame(char *received_buffer)
+{
+    /* go through received buffer until NULL or \0
+    Write each character to corresponding thing in led_strip_pixels_frame like:
+    int pixelIndex = i * 3;
+    led_strip_pixels_frame[pixelIndex] = g; // green
+    led_strip_pixels_frame[pixelIndex + 1] = r; // red
+    led_strip_pixels_frame[pixelIndex + 2] = b; // blue
+    Update LEDs like: 
+    ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels, (sizeof(led_strip_pixels)*3), &tx_config));
+    Wait for frame rate: 
+    vTaskDelay(pdMS_TO_TICKS(1000 / frameRate));
+    */
+}
 
 /**
  * @brief Simple helper function, converting HSV color space to RGB color space
@@ -67,34 +91,6 @@ void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t
     }
 }
 
-// Process a single frame JSON object and update led_strip_pixels_frame
-void process_frame(cJSON *frameJson, uint8_t *led_strip_pixels_frame) {
-    cJSON *frameArray = cJSON_GetObjectItem(frameJson, "frame");
-    if (frameArray != NULL && cJSON_IsArray(frameArray)) {
-        int numPixels = cJSON_GetArraySize(frameArray);
-        for (int i = 0; i < numPixels; i++) {
-            cJSON *pixelJson = cJSON_GetArrayItem(frameArray, i);
-            if (pixelJson != NULL && cJSON_IsObject(pixelJson)) {
-                cJSON *r_obj = cJSON_GetObjectItem(pixelJson, "r");
-                cJSON *g_obj = cJSON_GetObjectItem(pixelJson, "g");
-                cJSON *b_obj = cJSON_GetObjectItem(pixelJson, "b");
-
-                if (r_obj && g_obj && b_obj) {
-                    int r = r_obj->valueint;
-                    int g = g_obj->valueint;
-                    int b = b_obj->valueint;
-
-                    // Update the led_strip_pixels_frame for the current pixel
-                    int pixelIndex = i * 3;
-                    led_strip_pixels_frame[pixelIndex] = g; // green
-                    led_strip_pixels_frame[pixelIndex + 1] = r; // red
-                    led_strip_pixels_frame[pixelIndex + 2] = b; // blue
-                }
-            }
-        }
-    }
-}
-
 void task_led_strip(void *arg)
 {
     ESP_LOGI(TAG, "Create RMT TX channel");
@@ -123,55 +119,75 @@ void task_led_strip(void *arg)
         .loop_count = 0, // no transfer loop
     };
 
-    uint8_t* led_strip_pixels_frame = NULL;
     while (1) {
-        // Create a buffer for JSON chunk parsing
-        char chunk[128*10];
-
-        FILE *f = fopen("/data/data.json", "r");
+        FILE *f = fopen("/data/data.rgb", "r");
         if (f == NULL) {
             ESP_LOGE(TAG, "Failed to open file");
             vTaskDelete(NULL);
         }
 
-        cJSON *frameJson = NULL;
+        char buffer[128];
         size_t bytesRead;
-        int frameRate = 60; // Default frame rate
+        size_t detected = 0;
+        uint8_t frameRate = 1; // Default frame rate
+        size_t received_buffer_size_default = 1000;
+        size_t received_buffer_size = received_buffer_size_default;
+        size_t chunkRed = 0;
+        size_t led_count = 0;
+        free(received_buffer);
+        free(received_buffer_helper);
+        received_buffer = malloc((received_buffer_size + 1) * sizeof(char));
+        received_buffer[received_buffer_size] = '\0';
 
         while (!feof(f)) {
-            bytesRead = fread(chunk, 1, sizeof(chunk), f);
-            if (bytesRead > 0) {
-                chunk[bytesRead] = '\0';
+            bytesRead = fread(buffer, 1, sizeof(buffer), f);
+            buffer[bytesRead] = '\0';
+            
 
-                cJSON *partialJson = cJSON_Parse(chunk);
-                if (partialJson != NULL) {
-                    cJSON *fps_obj = cJSON_GetObjectItem(partialJson, "fps");
-                    if (fps_obj && cJSON_IsNumber(fps_obj)) {
-                        frameRate = fps_obj->valueint;
-                        ESP_LOGI(TAG, "Got frame rate: %d", frameRate);
+            if(strcmp(buffer, ";"))
+            {
+                switch (detected)
+                {
+                case 0:
+                    ESP_LOGW(TAG, "DETECTED FPS, bytesred %d", bytesRead);
+                    frameRate = (uint8_t)received_buffer;
+                    free(received_buffer);
+                    received_buffer_size = received_buffer_size_default;
+                    received_buffer = malloc((received_buffer_size + 1) * sizeof(char));
+                    chunkRed = bytesRead;
+                    break;
+                
+                default:
+                    ESP_LOGW(TAG, "DETECTED FRAME, bytesred %d", bytesRead);
+                    if (led_count == 0)
+                    {
+                        detect_leds(&led_count, &received_buffer);
                     }
-
-                    cJSON *dataArray = cJSON_GetObjectItem(partialJson, "data");
-                    if (dataArray != NULL && cJSON_IsArray(dataArray)) {
-                        int numFrames = cJSON_GetArraySize(dataArray);
-                        for (int i = 0; i < numFrames; i++) {
-                            frameJson = cJSON_GetArrayItem(dataArray, i);
-                            if (frameJson != NULL && cJSON_IsObject(frameJson)) {
-                                process_frame(frameJson, led_strip_pixels_frame);
-                                // Update the LED strip with led_strip_pixels_frame
-                                ESP_ERROR_CHECK(rmt_transmit(led_chan, led_encoder, led_strip_pixels_frame, (sizeof(led_strip_pixels_frame) * 3), &tx_config));
-
-                                // Calculate delay between frames based on frame rate
-                                vTaskDelay(pdMS_TO_TICKS(1000 / frameRate));
-                            }
-                        }
-                    }
-                    cJSON_Delete(partialJson);
-                } else {
-                    ESP_LOGE(TAG, "Failed to parse JSON chunk: %s", cJSON_GetErrorPtr());
-                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                    push_frame(&received_buffer);
+                    free(received_buffer);
+                    received_buffer_size = received_buffer_size_default;
+                    received_buffer = malloc((received_buffer_size + 1) * sizeof(char));
+                    chunkRed = bytesRead;
+                    break;
                 }
+                detected++;
             }
+            else
+            {
+                if ((bytesRead+1 - chunkRed) >= received_buffer_size)
+                {
+                    received_buffer_size += received_buffer_size_default;
+                    received_buffer_helper = malloc((received_buffer_size + 1) * sizeof(char));
+                    strcpy(received_buffer_helper, received_buffer);
+                    free(received_buffer);
+                    received_buffer = received_buffer_helper;
+                }
+                received_buffer[bytesRead-1] = buffer[0];
+            }
+
+
+
+            
         }
 
         fclose(f);

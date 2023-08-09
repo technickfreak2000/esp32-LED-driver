@@ -43,95 +43,13 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 
     return ESP_OK;
 }
-/*
-// API Post handler
-static esp_err_t api_post_handler(httpd_req_t *req)
-{
-    int total_len = req->content_len;
-    ESP_LOGI(TAG, "received %d size", total_len);
-    int cur_len = 0;
-    char *buf = malloc(sizeof(char) * total_len); //((rest_server_context_t *)(req->user_ctx))->scratch;
-    int received = 0;
-    if (total_len >= CONFIG_SCRATCH_BUFSIZE)
-    {
-         Respond with 500 Internal Server Error */
- /*       httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long");
-        return ESP_FAIL;
-    }
-    while (cur_len < total_len)
-    {
-        ESP_LOGI(TAG, "CurLen: %d size", cur_len);
-        received = httpd_req_recv(req, buf + cur_len, total_len - cur_len);
-        if (received <= 0)
-        {
-             Respond with 500 Internal Server Error */
-    /*        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value");
-            return ESP_FAIL;
-        }
-        cur_len += received;
-    }
-    buf[total_len] = '\0';
-
-    ESP_LOGI(TAG, "Buf: %s size", buf);
-    cJSON *root = cJSON_Parse(buf);
-    free(buf);
-
-    int num_elements = cJSON_GetArraySize(root);
-
-    ESP_LOGI(TAG, "Number of elements in the JSON array: %d", num_elements);
-
-    free(led_strip_pixels);
-
-    led_strip_pixels = (uint8_t *)malloc(num_elements * 3);
-
-    if (led_strip_pixels == NULL)
-    {
-        ESP_LOGE(TAG, "Memory allocation failed for led_strip_pixels.");
-        cJSON_Delete(root);
-    }
-
-    for (int i = 0; i < num_elements; i++)
-    {
-        cJSON *element = cJSON_GetArrayItem(root, i);
-        if (element && cJSON_IsObject(element))
-        {
-            cJSON *id_obj = cJSON_GetObjectItem(element, "id");
-            cJSON *r_obj = cJSON_GetObjectItem(element, "r");
-            cJSON *g_obj = cJSON_GetObjectItem(element, "g");
-            cJSON *b_obj = cJSON_GetObjectItem(element, "b");
-
-            if (id_obj && r_obj && g_obj && b_obj)
-            {
-                int id = id_obj->valueint;
-                int r = r_obj->valueint;
-                int g = g_obj->valueint;
-                int b = b_obj->valueint;
-
-                led_strip_pixels[id * 3 + 0] = g; // green
-                led_strip_pixels[id * 3 + 1] = r; // red
-                led_strip_pixels[id * 3 + 2] = b; // blue
-
-                ESP_LOGI(TAG, "Values: id: %i, r: %i, g: %i, b: %i", id, r, g, b);
-                
-            }
-        }
-    }
-
-    update_needed = true;
-
-    httpd_resp_sendstr(req, "Post control value successfully");
-
-    cJSON_Delete(root);
-
-    return ESP_OK;
-}*/
 
 /* Handler to upload a file onto the server */
 static esp_err_t upload_post_handler(httpd_req_t *req)
 {
     vTaskDelete(ledTaskHandle);
 
-    char filepath[FILE_PATH_MAX] = "/data/data.json";
+    char filepath[FILE_PATH_MAX] = "/data/data.rgb";
     FILE *fd = NULL;
     struct stat file_stat;
 
