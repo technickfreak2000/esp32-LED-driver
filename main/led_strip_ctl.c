@@ -184,12 +184,9 @@ void task_led_strip(void *arg)
                 }
                 received_buffer[bytesRead-1] = buffer[0];
             }
-
-
-
-            
         }
-
+        free(received_buffer);
+        free(received_buffer_helper);
         fclose(f);
     }
 }
