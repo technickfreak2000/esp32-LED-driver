@@ -47,7 +47,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 /* Handler to upload a file onto the server */
 static esp_err_t upload_post_handler(httpd_req_t *req)
 {
-    vTaskDelete(ledTaskHandle);
+    // vTaskDelete(ledTaskHandle);
 
     char filepath[FILE_PATH_MAX] = "/data/data.rgb";
     FILE *fd = NULL;
@@ -139,7 +139,7 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Connection", "close");
 #endif
     httpd_resp_sendstr(req, "File uploaded successfully");
-    init_led_strip();
+    // init_led_strip();
     return ESP_OK;
 }
 

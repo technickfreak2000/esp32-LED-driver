@@ -49,5 +49,5 @@ void app_main(void)
   start_webserver();
 
   ESP_LOGI(TAG, "init LED strip");
-  init_led_strip();
+ // init_led_strip();
 }
